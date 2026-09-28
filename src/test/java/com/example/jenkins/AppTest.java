@@ -8,6 +8,6 @@ class AppTest {
 
     @Test
     void applicationTest() {
-        assertTrue(true);
+        assertTrue(false);
     }
 }

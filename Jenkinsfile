@@ -28,7 +28,7 @@ pipeline {
         stage('Build Docker Image') {
             steps {
                 echo 'Building Docker image'
-                bat 'docker build -t jenkins-cicd-demo:build-%BUILD_NUMBER%.'
+                bat 'docker build -t jenkins-cicd-demo:build-%BUILD_NUMBER% .'
             }
         }
 

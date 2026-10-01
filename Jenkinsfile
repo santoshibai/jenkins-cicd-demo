@@ -28,7 +28,7 @@ pipeline {
         stage('Build Docker Image') {
             steps {
                 echo 'Building Docker image'
-                bat 'docker build -t jenkins-cicd-demo:1.0 .'
+                bat 'docker build -t jenkins-cicd-demo:build-%BUILD_NUMBER%.'
             }
         }
 
@@ -42,7 +42,7 @@ pipeline {
         stage('Run New Container') {
             steps {
                 echo 'Starting new Docker container'
-                bat 'docker run --name jenkins-cicd-demo-container jenkins-cicd-demo:1.0'
+                bat 'docker run --name jenkins-cicd-demo-container jenkins-cicd-demo:build-%BUILD_NUMBER%'
             }
         }
 

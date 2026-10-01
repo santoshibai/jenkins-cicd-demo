@@ -1,3 +1,4 @@
+```groovy
 pipeline {
 
     agent any
@@ -42,14 +43,14 @@ pipeline {
         stage('Run New Container') {
             steps {
                 echo 'Starting new Docker container'
-                bat 'docker run --name jenkins-cicd-demo-container jenkins-cicd-demo:build-%BUILD_NUMBER%'
+                bat 'docker run -d --name jenkins-cicd-demo-container -p 8081:8080 jenkins-cicd-demo:build-%BUILD_NUMBER%'
             }
         }
 
-        stage('Verify Deployment') {
+        stage('Health Check') {
             steps {
-                echo 'Checking Docker container status'
-                bat 'docker ps -a'
+                echo 'Checking application health'
+                bat 'curl -f http://localhost:8081/health'
             }
         }
     }
@@ -69,3 +70,4 @@ pipeline {
         }
     }
 }
+```

@@ -2,6 +2,13 @@ pipeline {
 
     agent any
 
+    environment {
+        IMAGE_NAME = 'jenkins-cicd-demo'
+        CONTAINER_NAME = 'jenkins-cicd-demo-container'
+        STABLE_IMAGE = 'jenkins-cicd-demo:stable'
+        NEW_IMAGE = "jenkins-cicd-demo:build-${BUILD_NUMBER}"
+    }
+
     stages {
 
         stage('Checkout') {
@@ -28,28 +35,121 @@ pipeline {
         stage('Build Docker Image') {
             steps {
                 echo 'Building Docker image'
-                bat 'docker build -t jenkins-cicd-demo:build-%BUILD_NUMBER% .'
+                bat 'docker build -t %NEW_IMAGE% .'
+            }
+        }
+
+        stage('Prepare Stable Image') {
+            steps {
+                echo 'Checking for previous stable image'
+
+                bat '''
+                    docker image inspect %STABLE_IMAGE% >nul 2>&1
+                    if %ERRORLEVEL% EQU 0 (
+                        echo Previous stable image exists
+                    ) else (
+                        echo No previous stable image exists - first deployment
+                    )
+                '''
             }
         }
 
         stage('Remove Old Container') {
             steps {
-                echo 'Removing old container if it exists'
-                bat 'docker rm -f jenkins-cicd-demo-container >nul 2>&1 || exit /b 0'
+                echo 'Removing currently running container'
+
+                bat '''
+                    docker rm -f %CONTAINER_NAME% >nul 2>&1
+                    exit /b 0
+                '''
             }
         }
 
         stage('Run New Container') {
             steps {
                 echo 'Starting new Docker container'
-                bat 'docker run -d --name jenkins-cicd-demo-container -p 8081:8080 jenkins-cicd-demo:build-%BUILD_NUMBER%'
+
+                bat 'docker run -d --name %CONTAINER_NAME% -p 8081:8080 %NEW_IMAGE%'
             }
         }
 
         stage('Health Check') {
             steps {
-                echo 'Checking application health'
-                bat 'curl -f http://localhost:8081/health'
+                script {
+
+                    echo 'Checking application health'
+
+                    def healthResult = bat(
+                        script: 'curl -f http://localhost:8081/health',
+                        returnStatus: true
+                    )
+
+                    if (healthResult != 0) {
+
+                        echo '========================================'
+                        echo 'NEW DEPLOYMENT HEALTH CHECK FAILED'
+                        echo 'Starting automatic rollback'
+                        echo '========================================'
+
+                        bat '''
+                            docker rm -f %CONTAINER_NAME% >nul 2>&1
+                            exit /b 0
+                        '''
+
+                        bat '''
+                            docker image inspect %STABLE_IMAGE% >nul 2>&1
+                            if %ERRORLEVEL% EQU 0 (
+                                echo Stable image found. Starting rollback.
+                            ) else (
+                                echo No stable image available for rollback.
+                                exit /b 1
+                            )
+                        '''
+
+                        bat 'docker run -d --name %CONTAINER_NAME% -p 8081:8080 %STABLE_IMAGE%'
+
+                        echo 'Checking health of rolled-back container'
+
+                        def rollbackHealthResult = bat(
+                            script: 'curl -f http://localhost:8081/health',
+                            returnStatus: true
+                        )
+
+                        if (rollbackHealthResult == 0) {
+
+                            echo '========================================'
+                            echo 'ROLLBACK COMPLETED SUCCESSFULLY'
+                            echo 'Previous stable version is running'
+                            echo '========================================'
+
+                        } else {
+
+                            echo '========================================'
+                            echo 'ROLLBACK FAILED'
+                            echo '========================================'
+
+                            bat '''
+                                docker rm -f %CONTAINER_NAME% >nul 2>&1
+                                exit /b 0
+                            '''
+
+                            error('Rollback failed. No healthy version is running.')
+                        }
+
+                        error('Deployment failed. Automatic rollback was triggered.')
+
+                    } else {
+
+                        echo '========================================'
+                        echo 'NEW DEPLOYMENT HEALTH CHECK PASSED'
+                        echo 'Marking new image as stable'
+                        echo '========================================'
+
+                        bat 'docker tag %NEW_IMAGE% %STABLE_IMAGE%'
+
+                        echo 'New deployment is now the stable version'
+                    }
+                }
             }
         }
     }

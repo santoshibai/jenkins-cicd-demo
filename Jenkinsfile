@@ -50,25 +50,21 @@ pipeline {
                     ) else (
                         echo No previous stable image exists - first deployment
                     )
+                    exit /b 0
                 '''
             }
         }
 
-        stage('Prepare Stable Image') {
-    steps {
-        echo 'Checking for previous stable image'
+        stage('Remove Old Container') {
+            steps {
+                echo 'Removing currently running container'
 
-        bat '''
-            docker image inspect %STABLE_IMAGE% >nul 2>&1
-            if %ERRORLEVEL% EQU 0 (
-                echo Previous stable image exists
-            ) else (
-                echo No previous stable image exists - first deployment
-            )
-            exit /b 0
-        '''
-    }
-}        
+                bat '''
+                    docker rm -f %CONTAINER_NAME% >nul 2>&1
+                    exit /b 0
+                '''
+            }
+        }
 
         stage('Run New Container') {
             steps {

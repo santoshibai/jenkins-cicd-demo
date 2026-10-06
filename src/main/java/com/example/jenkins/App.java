@@ -23,6 +23,6 @@ public class App {
         server.start();
 
         System.out.println("Jenkins CI/CD Demo Application is running!");
-        System.out.println("Health endpoint: http://localhost:8080/health");
+        System.out.println("SCRUM-8: GitHub and Jira integration demo completed.");
     }
 }

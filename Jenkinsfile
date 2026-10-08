@@ -213,4 +213,4 @@ pipeline {
         echo 'Jira updated with pipeline failure'
     }
 }
-    
+}

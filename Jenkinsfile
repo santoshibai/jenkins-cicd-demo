@@ -7,6 +7,8 @@ pipeline {
         CONTAINER_NAME = 'jenkins-cicd-demo-container'
         STABLE_IMAGE = 'jenkins-cicd-demo:stable'
         NEW_IMAGE = "jenkins-cicd-demo:build-${BUILD_NUMBER}"
+        JIRA_URL = 'https://vithiqai-team.atlassian.net'
+        JIRA_ISSUE = 'SCRUM-8'
     }
 
     stages {
@@ -154,19 +156,61 @@ pipeline {
             }
         }
     }
-
+    
     post {
 
-        success {
-            echo '========================================'
-            echo 'PIPELINE COMPLETED SUCCESSFULLY'
-            echo '========================================'
+    success {
+        echo '========================================'
+        echo 'PIPELINE COMPLETED SUCCESSFULLY'
+        echo 'Updating Jira'
+        echo '========================================'
+
+        withCredentials([
+            usernamePassword(
+                credentialsId: 'jira-api-jenkins',
+                usernameVariable: 'JIRA_USER',
+                passwordVariable: 'JIRA_TOKEN'
+            )
+        ]) {
+
+            bat '''
+                powershell -NoProfile -Command ^
+                "$body = @{body=@{type='doc';version=1;content=@(@{type='paragraph';content=@(@{type='text';text='Jenkins pipeline SUCCESS. Build #%BUILD_NUMBER% completed successfully. Docker deployment and health check passed.'})})}} | ConvertTo-Json -Depth 10; ^
+                $pair = [System.Convert]::ToBase64String([System.Text.Encoding]::ASCII.GetBytes($env:JIRA_USER + ':' + $env:JIRA_TOKEN)); ^
+                $headers = @{Authorization='Basic ' + $pair; 'Content-Type'='application/json'}; ^
+                Invoke-RestMethod -Uri '%JIRA_URL%/rest/api/3/issue/%JIRA_ISSUE%/comment' -Method Post -Headers $headers -Body $body
+            '''
+
         }
 
-        failure {
-            echo '========================================'
-            echo 'PIPELINE FAILED'
-            echo '========================================'
+        echo 'Jira updated successfully'
+    }
+
+    failure {
+        echo '========================================'
+        echo 'PIPELINE FAILED'
+        echo 'Updating Jira'
+        echo '========================================'
+
+        withCredentials([
+            usernamePassword(
+                credentialsId: 'jira-api-jenkins',
+                usernameVariable: 'JIRA_USER',
+                passwordVariable: 'JIRA_TOKEN'
+            )
+        ]) {
+
+            bat '''
+                powershell -NoProfile -Command ^
+                "$body = @{body=@{type='doc';version=1;content=@(@{type='paragraph';content=@(@{type='text';text='Jenkins pipeline FAILED. Build #%BUILD_NUMBER% failed. Please check the Jenkins console log.'})})}} | ConvertTo-Json -Depth 10; ^
+                $pair = [System.Convert]::ToBase64String([System.Text.Encoding]::ASCII.GetBytes($env:JIRA_USER + ':' + $env:JIRA_TOKEN)); ^
+                $headers = @{Authorization='Basic ' + $pair; 'Content-Type'='application/json'}; ^
+                Invoke-RestMethod -Uri '%JIRA_URL%/rest/api/3/issue/%JIRA_ISSUE%/comment' -Method Post -Headers $headers -Body $body
+            '''
+
         }
+
+        echo 'Jira updated with pipeline failure'
     }
 }
+    

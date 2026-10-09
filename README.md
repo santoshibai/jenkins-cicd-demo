@@ -12,3 +12,4 @@ Jira Issue: SCRUM-8
 
 Purpose: Verify GitHub commit, pull request, Jenkins, and Slack notifications.
 
+Jenkins webhook trigger test 

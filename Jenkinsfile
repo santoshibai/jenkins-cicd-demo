@@ -1,7 +1,5 @@
 pipeline {
-
     agent any
-
     environment {
         IMAGE_NAME = 'jenkins-cicd-demo'
         CONTAINER_NAME = 'jenkins-cicd-demo-container'
@@ -10,10 +8,9 @@ pipeline {
         JIRA_URL = 'https://vithiqai-team.atlassian.net'
         JIRA_ISSUE = 'SCRUM-8'
     }
-
-    stages {
-
-        stage('Checkout') {
+    stages 
+    {
+          stage('Checkout') {
             steps {
                 echo 'Checking out source code from GitHub'
                 checkout scm

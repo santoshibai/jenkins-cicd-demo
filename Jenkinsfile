@@ -146,7 +146,7 @@ pipeline {
             script {
                 try {
                     slackSend(
-                        channel: '#food-fusion',
+                        channel: '#foodfusion-github',
                         message: "SUCCESS: ${env.JOB_NAME} #${env.BUILD_NUMBER} - Build, deployment and health check passed. Jira: ${env.JIRA_ISSUE}"
                     )
                     echo 'Slack success notification sent'
@@ -176,7 +176,7 @@ pipeline {
             script {
                 try {
                     slackSend(
-                        channel: '#food-fusion',
+                        channel: '#foodfusion-github',
                         message: "FAILURE: ${env.JOB_NAME} #${env.BUILD_NUMBER} - Pipeline failed. Check Jenkins Console Output. Jira: ${env.JIRA_ISSUE}"
                     )
                     echo 'Slack failure notification sent'

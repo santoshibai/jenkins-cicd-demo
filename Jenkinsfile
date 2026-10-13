@@ -1,4 +1,3 @@
-
 pipeline {
     agent any
 
@@ -165,8 +164,8 @@ pipeline {
             ]) {
                 bat '''
                     powershell -NoProfile -ExecutionPolicy Bypass -Command "$pair = [Convert]::ToBase64String([Text.Encoding]::ASCII.GetBytes($env:JIRA_USER + ':' + $env:JIRA_TOKEN)); $headers = @{Authorization=('Basic ' + $pair); Accept='application/json'}; $me = Invoke-RestMethod -Uri ($env:JIRA_URL + '/rest/api/3/myself') -Method Get -Headers $headers; Write-Output ('JIRA_AUTH_USER: ' + $me.displayName); Write-Output ('JIRA_ACCOUNT_ID: ' + $me.accountId); try { $issue = Invoke-RestMethod -Uri ($env:JIRA_URL + '/rest/api/3/issue/' + $env:JIRA_ISSUE + '?fields=summary') -Method Get -Headers $headers; Write-Output ('JIRA_ISSUE_OK: ' + $issue.key + ' - ' + $issue.fields.summary) } catch { if ($_.Exception.Response) { Write-Output ('JIRA_ISSUE_STATUS: ' + [int]$_.Exception.Response.StatusCode) } else { Write-Output 'JIRA_ISSUE_STATUS: Request failed before receiving an HTTP response' } }"
-                ...
-                }
+                '''
+            }
         }
 
         failure {
@@ -181,3 +180,4 @@ pipeline {
         }
     }
 }
+

@@ -171,11 +171,7 @@ pipeline {
         ]) {
 
             bat '''
-                powershell -NoProfile -Command ^
-                "$body = @{body=@{type='doc';version=1;content=@(@{type='paragraph';content=@(@{type='text';text='Jenkins pipeline SUCCESS. Build #%BUILD_NUMBER% completed successfully. Docker deployment and health check passed.'})})}} | ConvertTo-Json -Depth 10; ^
-                $pair = [System.Convert]::ToBase64String([System.Text.Encoding]::ASCII.GetBytes($env:JIRA_USER + ':' + $env:JIRA_TOKEN)); ^
-                $headers = @{Authorization='Basic ' + $pair; 'Content-Type'='application/json'}; ^
-                Invoke-RestMethod -Uri '%JIRA_URL%/rest/api/3/issue/%JIRA_ISSUE%/comment' -Method Post -Headers $headers -Body $body
+            powershell -NoProfile -ExecutionPolicy Bypass -Command "$body = @{body=@{type='doc';version=1;content=@(@{type='paragraph';content=@(@{type='text';text='Jenkins pipeline SUCCESS. Build #'+$env:BUILD_NUMBER+' completed successfully. Docker deployment and health check passed.'})})}} | ConvertTo-Json -Depth 10 -Compress; $pair = [Convert]::ToBase64String([Text.Encoding]::ASCII.GetBytes($env:JIRA_USER + ':' + $env:JIRA_TOKEN)); $headers = @{Authorization=('Basic ' + $pair); 'Content-Type'='application/json'}; Invoke-RestMethod -Uri ($env:JIRA_URL + '/rest/api/3/issue/' + $env:JIRA_ISSUE + '/comment') -Method Post -Headers $headers -Body $body"
             '''
 
         }
@@ -198,11 +194,7 @@ pipeline {
         ]) {
 
             bat '''
-                powershell -NoProfile -Command ^
-                "$body = @{body=@{type='doc';version=1;content=@(@{type='paragraph';content=@(@{type='text';text='Jenkins pipeline FAILED. Build #%BUILD_NUMBER% failed. Please check the Jenkins console log.'})})}} | ConvertTo-Json -Depth 10; ^
-                $pair = [System.Convert]::ToBase64String([System.Text.Encoding]::ASCII.GetBytes($env:JIRA_USER + ':' + $env:JIRA_TOKEN)); ^
-                $headers = @{Authorization='Basic ' + $pair; 'Content-Type'='application/json'}; ^
-                Invoke-RestMethod -Uri '%JIRA_URL%/rest/api/3/issue/%JIRA_ISSUE%/comment' -Method Post -Headers $headers -Body $body
+            powershell -NoProfile -ExecutionPolicy Bypass -Command "$body = @{body=@{type='doc';version=1;content=@(@{type='paragraph';content=@(@{type='text';text='Jenkins pipeline FAILURE. Build #'+$env:BUILD_NUMBER+' failed. Please check the Jenkins console log.'})})}} | ConvertTo-Json -Depth 10 -Compress; $pair = [Convert]::ToBase64String([Text.Encoding]::ASCII.GetBytes($env:JIRA_USER + ':' + $env:JIRA_TOKEN)); $headers = @{Authorization=('Basic ' + $pair); 'Content-Type'='application/json'}; Invoke-RestMethod -Uri ($env:JIRA_URL + '/rest/api/3/issue/' + $env:JIRA_ISSUE + '/comment') -Method Post -Headers $headers -Body $body"
             '''
 
         }

@@ -162,6 +162,23 @@ pipeline {
                         credentialsId: 'jira-api-jenkins',
                         usernameVariable: 'JIRA_USER',
                         passwordVariable: 'JIRA_TOKEN'
+                  
+        stage('Diagnose Jira API') {
+            steps {
+                withCredentials([
+                    usernamePassword(
+                        credentialsId: 'jira-api-jenkins',
+                        usernameVariable: 'JIRA_USER',
+                        passwordVariable: 'JIRA_TOKEN'
+                    )
+                ]) {
+                    bat '''
+                    powershell -NoProfile -ExecutionPolicy Bypass -Command "$pair = [Convert]::ToBase64String([Text.Encoding]::ASCII.GetBytes($env:JIRA_USER + ':' + $env:JIRA_TOKEN)); $headers = @{Authorization=('Basic ' + $pair); Accept='application/json'}; try { $result = Invoke-RestMethod -Uri ($env:JIRA_URL + '/rest/api/3/issue/' + $env:JIRA_ISSUE) -Method Get -Headers $headers; Write-Output ('JIRA_API_OK: ' + $result.key) } catch { Write-Output ('JIRA_API_STATUS: ' + [int]$_.Exception.Response.StatusCode); exit 1 }"
+                    '''
+                }
+            }
+        }
+ 
                     )
                 ]) {
                     bat '''

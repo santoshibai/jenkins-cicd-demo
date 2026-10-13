@@ -6,7 +6,7 @@ pipeline {
         STABLE_IMAGE = 'jenkins-cicd-demo:stable'
         NEW_IMAGE = "jenkins-cicd-demo:build-${BUILD_NUMBER}"
         JIRA_URL = 'https://vithiqai-team.atlassian.net'
-        JIRA_ISSUE = 'SCRUM-8'
+        JIRA_ISSUE = 'VAP-19'
     }
     stages 
     {

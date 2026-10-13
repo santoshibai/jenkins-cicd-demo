@@ -1,5 +1,7 @@
+
 pipeline {
     agent any
+
     environment {
         IMAGE_NAME = 'jenkins-cicd-demo'
         CONTAINER_NAME = 'jenkins-cicd-demo-container'
@@ -8,9 +10,9 @@ pipeline {
         JIRA_URL = 'https://vithiqai-team.atlassian.net'
         JIRA_ISSUE = 'VAP-19'
     }
-    stages 
-    {
-          stage('Checkout') {
+
+    stages {
+        stage('Checkout') {
             steps {
                 echo 'Checking out source code from GitHub'
                 checkout scm
@@ -68,7 +70,6 @@ pipeline {
         stage('Run New Container') {
             steps {
                 echo 'Starting new Docker container'
-
                 bat 'docker run -d --name %CONTAINER_NAME% -p 8081:8080 %NEW_IMAGE%'
             }
         }
@@ -76,7 +77,6 @@ pipeline {
         stage('Health Check') {
             steps {
                 script {
-
                     echo 'Checking application health'
 
                     def healthResult = bat(
@@ -85,7 +85,6 @@ pipeline {
                     )
 
                     if (healthResult != 0) {
-
                         echo '========================================'
                         echo 'NEW DEPLOYMENT HEALTH CHECK FAILED'
                         echo 'Starting automatic rollback'
@@ -116,14 +115,11 @@ pipeline {
                         )
 
                         if (rollbackHealthResult == 0) {
-
                             echo '========================================'
                             echo 'ROLLBACK COMPLETED SUCCESSFULLY'
                             echo 'Previous stable version is running'
                             echo '========================================'
-
                         } else {
-
                             echo '========================================'
                             echo 'ROLLBACK FAILED'
                             echo '========================================'
@@ -139,7 +135,6 @@ pipeline {
                         error('Deployment failed. Automatic rollback was triggered.')
 
                     } else {
-
                         echo '========================================'
                         echo 'NEW DEPLOYMENT HEALTH CHECK PASSED'
                         echo 'Marking new image as stable'
@@ -153,84 +148,36 @@ pipeline {
             }
         }
     }
-    
+
     post {
-        stage('Diagnose Jira API') {
-            steps {
-                withCredentials([
-                    usernamePassword(
-                        credentialsId: 'jira-api-jenkins',
-                        usernameVariable: 'JIRA_USER',
-                        passwordVariable: 'JIRA_TOKEN'
-                  
-        stage('Diagnose Jira API') {
-            steps {
-                withCredentials([
-                    usernamePassword(
-                        credentialsId: 'jira-api-jenkins',
-                        usernameVariable: 'JIRA_USER',
-                        passwordVariable: 'JIRA_TOKEN'
-                    )
-                ]) {
-                    bat '''
-                    powershell -NoProfile -ExecutionPolicy Bypass -Command "$pair = [Convert]::ToBase64String([Text.Encoding]::ASCII.GetBytes($env:JIRA_USER + ':' + $env:JIRA_TOKEN)); $headers = @{Authorization=('Basic ' + $pair); Accept='application/json'}; try { $result = Invoke-RestMethod -Uri ($env:JIRA_URL + '/rest/api/3/issue/' + $env:JIRA_ISSUE) -Method Get -Headers $headers; Write-Output ('JIRA_API_OK: ' + $result.key) } catch { Write-Output ('JIRA_API_STATUS: ' + [int]$_.Exception.Response.StatusCode); exit 1 }"
-                    '''
-                }
+        success {
+            echo '========================================'
+            echo 'PIPELINE COMPLETED SUCCESSFULLY'
+            echo 'Checking Jira API access'
+            echo '========================================'
+
+            withCredentials([
+                usernamePassword(
+                    credentialsId: 'jira-api-jenkins',
+                    usernameVariable: 'JIRA_USER',
+                    passwordVariable: 'JIRA_TOKEN'
+                )
+            ]) {
+                bat '''
+                    powershell -NoProfile -ExecutionPolicy Bypass -Command "$pair = [Convert]::ToBase64String([Text.Encoding]::ASCII.GetBytes($env:JIRA_USER + ':' + $env:JIRA_TOKEN)); $headers = @{Authorization=('Basic ' + $pair); Accept='application/json'}; try { $result = Invoke-RestMethod -Uri ($env:JIRA_URL + '/rest/api/3/issue/' + $env:JIRA_ISSUE + '?fields=summary') -Method Get -Headers $headers; Write-Output ('JIRA_API_OK: ' + $result.key); Write-Output ('JIRA_ISSUE_SUMMARY: ' + $result.fields.summary) } catch { if ($_.Exception.Response) { Write-Output ('JIRA_API_STATUS: ' + [int]$_.Exception.Response.StatusCode) } else { Write-Output 'JIRA_API_STATUS: Request failed before receiving an HTTP response' }; exit 1 }"
+                '''
             }
         }
- 
-                    )
-                ]) {
-                    bat '''
-                    powershell -NoProfile -ExecutionPolicy Bypass -Command "$pair = [Convert]::ToBase64String([Text.Encoding]::ASCII.GetBytes($env:JIRA_USER + ':' + $env:JIRA_TOKEN)); $headers = @{Authorization=('Basic ' + $pair); Accept='application/json'}; try { $result = Invoke-RestMethod -Uri ($env:JIRA_URL + '/rest/api/3/issue/' + $env:JIRA_ISSUE) -Method Get -Headers $headers; Write-Output ('JIRA_API_OK: ' + $result.key) } catch { Write-Output ('JIRA_API_STATUS: ' + [int]$_.Exception.Response.StatusCode); exit 1 }"
-                    '''
-                }
-            }
-        }
-    success {
-        echo '========================================'
-        echo 'PIPELINE COMPLETED SUCCESSFULLY'
-        echo 'Updating Jira'
-        echo '========================================'
 
-        withCredentials([
-            usernamePassword(
-                credentialsId: 'jira-api-jenkins',
-                usernameVariable: 'JIRA_USER',
-                passwordVariable: 'JIRA_TOKEN'
-            )
-        ]) {
-
-            bat '''
-            powershell -NoProfile -ExecutionPolicy Bypass -Command "$body = @{body=@{type='doc';version=1;content=@(@{type='paragraph';content=@(@{type='text';text='Jenkins pipeline SUCCESS. Build #'+$env:BUILD_NUMBER+' completed successfully. Docker deployment and health check passed.'})})}} | ConvertTo-Json -Depth 10 -Compress; $pair = [Convert]::ToBase64String([Text.Encoding]::ASCII.GetBytes($env:JIRA_USER + ':' + $env:JIRA_TOKEN)); $headers = @{Authorization=('Basic ' + $pair); 'Content-Type'='application/json'}; Invoke-RestMethod -Uri ($env:JIRA_URL + '/rest/api/3/issue/' + $env:JIRA_ISSUE + '/comment') -Method Post -Headers $headers -Body $body"
-            '''
-
+        failure {
+            echo '========================================'
+            echo 'PIPELINE FAILED'
+            echo 'Check the Jenkins console output for the failed stage.'
+            echo '========================================'
         }
 
-        echo 'Jira updated successfully'
+        always {
+            echo 'Jenkins pipeline execution finished.'
+        }
     }
-
-    failure {
-        echo '========================================'
-        echo 'PIPELINE FAILED'
-        echo 'Updating Jira'
-        echo '========================================'
-
-        withCredentials([
-            usernamePassword(
-                credentialsId: 'jira-api-jenkins',
-                usernameVariable: 'JIRA_USER',
-                passwordVariable: 'JIRA_TOKEN'
-            )
-        ]) {
-
-            bat '''
-            powershell -NoProfile -ExecutionPolicy Bypass -Command "$body = @{body=@{type='doc';version=1;content=@(@{type='paragraph';content=@(@{type='text';text='Jenkins pipeline FAILURE. Build #'+$env:BUILD_NUMBER+' failed. Please check the Jenkins console log.'})})}} | ConvertTo-Json -Depth 10 -Compress; $pair = [Convert]::ToBase64String([Text.Encoding]::ASCII.GetBytes($env:JIRA_USER + ':' + $env:JIRA_TOKEN)); $headers = @{Authorization=('Basic ' + $pair); 'Content-Type'='application/json'}; Invoke-RestMethod -Uri ($env:JIRA_URL + '/rest/api/3/issue/' + $env:JIRA_ISSUE + '/comment') -Method Post -Headers $headers -Body $body"
-            '''
-
-        }
-
-        echo 'Jira updated with pipeline failure'
-    }
-}
 }

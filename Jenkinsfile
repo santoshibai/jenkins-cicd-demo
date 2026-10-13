@@ -164,7 +164,7 @@ pipeline {
                 )
             ]) {
                 bat '''
-                    powershell -NoProfile -ExecutionPolicy Bypass -Command "$pair = [Convert]::ToBase64String([Text.Encoding]::ASCII.GetBytes($env:JIRA_USER + ':' + $env:JIRA_TOKEN)); $headers = @{Authorization=('Basic ' + $pair); Accept='application/json'}; try { $result = Invoke-RestMethod -Uri ($env:JIRA_URL + '/rest/api/3/issue/' + $env:JIRA_ISSUE + '?fields=summary') -Method Get -Headers $headers; Write-Output ('JIRA_API_OK: ' + $result.key); Write-Output ('JIRA_ISSUE_SUMMARY: ' + $result.fields.summary) } catch { if ($_.Exception.Response) { Write-Output ('JIRA_API_STATUS: ' + [int]$_.Exception.Response.StatusCode) } else { Write-Output 'JIRA_API_STATUS: Request failed before receiving an HTTP response' }; exit 1 }"
+                    powershell -NoProfile -ExecutionPolicy Bypass -Command "$pair = [Convert]::ToBase64String([Text.Encoding]::ASCII.GetBytes($env:JIRA_USER + ':' + $env:JIRA_TOKEN)); $headers = @{Authorization=('Basic ' + $pair); Accept='application/json'}; try { $result = Invoke-RestMethod -Uri ($env:JIRA_URL + '/rest/api/3/myself') -Method Get -Headers $headers; Write-Output ('JIRA_API_OK: ' + $result.key); Write-Output ('JIRA_ISSUE_SUMMARY: ' + $result.fields.summary) } catch { if ($_.Exception.Response) { Write-Output ('JIRA_API_STATUS: ' + [int]$_.Exception.Response.StatusCode) } else { Write-Output 'JIRA_API_STATUS: Request failed before receiving an HTTP response' } }"
                 '''
             }
         }

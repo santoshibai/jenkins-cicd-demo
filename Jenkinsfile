@@ -8,6 +8,8 @@ pipeline {
         NEW_IMAGE = "jenkins-cicd-demo:build-${BUILD_NUMBER}"
         JIRA_URL = 'https://vithiqai-team.atlassian.net'
         JIRA_ISSUE = 'VAP-19'
+        DOCKER_HOST = 'npipe:////./pipe/dockerDesktopLinuxEngine'
+        DOCKER_CLI = 'C:\\Program Files\\Docker\\Docker\\resources\\bin\\docker.exe'
     }
 
     stages {

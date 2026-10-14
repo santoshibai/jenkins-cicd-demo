@@ -1,3 +1,4 @@
+
 pipeline {
     agent any
 
@@ -6,8 +7,10 @@ pipeline {
         CONTAINER_NAME = 'jenkins-cicd-demo-container'
         STABLE_IMAGE = 'jenkins-cicd-demo:stable'
         NEW_IMAGE = "jenkins-cicd-demo:build-${BUILD_NUMBER}"
-        JIRA_URL = 'https://vithiqai-team.atlassian.net'
+
+        JIRA_URL = 'https://vithiqai.atlassian.net'
         JIRA_ISSUE = 'VAP-19'
+
         DOCKER_HOST = 'npipe:////./pipe/dockerDesktopLinuxEngine'
         DOCKER_CLI = 'C:\\Program Files\\Docker\\Docker\\resources\\bin\\docker.exe'
     }
@@ -37,7 +40,7 @@ pipeline {
         stage('Build Docker Image') {
             steps {
                 echo 'Building Docker image'
-                bat 'docker build -t %NEW_IMAGE% .'
+                bat '"%DOCKER_CLI%" build -t %NEW_IMAGE% .'
             }
         }
 
@@ -46,7 +49,7 @@ pipeline {
                 echo 'Checking for previous stable image'
 
                 bat '''
-                    docker image inspect %STABLE_IMAGE% >nul 2>&1
+                    "%DOCKER_CLI%" image inspect %STABLE_IMAGE% >nul 2>&1
                     if %ERRORLEVEL% EQU 0 (
                         echo Previous stable image exists
                     ) else (
@@ -62,7 +65,7 @@ pipeline {
                 echo 'Removing currently running container'
 
                 bat '''
-                    docker rm -f %CONTAINER_NAME% >nul 2>&1
+                    "%DOCKER_CLI%" rm -f %CONTAINER_NAME% >nul 2>&1
                     exit /b 0
                 '''
             }
@@ -71,7 +74,7 @@ pipeline {
         stage('Run New Container') {
             steps {
                 echo 'Starting new Docker container'
-                bat 'docker run -d --name %CONTAINER_NAME% -p 8081:8080 %NEW_IMAGE%'
+                bat '"%DOCKER_CLI%" run -d --name %CONTAINER_NAME% -p 8081:8080 %NEW_IMAGE%'
             }
         }
 
@@ -92,12 +95,12 @@ pipeline {
                         echo '========================================'
 
                         bat '''
-                            docker rm -f %CONTAINER_NAME% >nul 2>&1
+                            "%DOCKER_CLI%" rm -f %CONTAINER_NAME% >nul 2>&1
                             exit /b 0
                         '''
 
                         bat '''
-                            docker image inspect %STABLE_IMAGE% >nul 2>&1
+                            "%DOCKER_CLI%" image inspect %STABLE_IMAGE% >nul 2>&1
                             if %ERRORLEVEL% EQU 0 (
                                 echo Stable image found. Starting rollback.
                             ) else (
@@ -106,7 +109,7 @@ pipeline {
                             )
                         '''
 
-                        bat 'docker run -d --name %CONTAINER_NAME% -p 8081:8080 %STABLE_IMAGE%'
+                        bat '"%DOCKER_CLI%" run -d --name %CONTAINER_NAME% -p 8081:8080 %STABLE_IMAGE%'
 
                         echo 'Checking health of rolled-back container'
 
@@ -126,7 +129,7 @@ pipeline {
                             echo '========================================'
 
                             bat '''
-                                docker rm -f %CONTAINER_NAME% >nul 2>&1
+                                "%DOCKER_CLI%" rm -f %CONTAINER_NAME% >nul 2>&1
                                 exit /b 0
                             '''
 
@@ -141,7 +144,7 @@ pipeline {
                         echo 'Marking new image as stable'
                         echo '========================================'
 
-                        bat 'docker tag %NEW_IMAGE% %STABLE_IMAGE%'
+                        bat '"%DOCKER_CLI%" tag %NEW_IMAGE% %STABLE_IMAGE%'
 
                         echo 'New deployment is now the stable version'
                     }
@@ -182,4 +185,3 @@ pipeline {
         }
     }
 }
-

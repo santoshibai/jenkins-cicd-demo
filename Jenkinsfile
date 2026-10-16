@@ -157,6 +157,11 @@ pipeline {
     post {
 
     success {
+                slackSend(
+            channel: '#foodfusion',
+            color: 'good',
+            message: "SUCCESS: ${env.JOB_NAME} #${env.BUILD_NUMBER} completed successfully.       ${env.BUILD_URL}"
+        )
         echo '========================================'
         echo 'PIPELINE COMPLETED SUCCESSFULLY'
         echo 'Updating Jira'
@@ -184,6 +189,11 @@ pipeline {
     }
 
     failure {
+                slackSend(
+            channel: '#foodfusion',
+            color: 'danger',
+            message: "FAILED: ${env.JOB_NAME} #${env.BUILD_NUMBER} failed. Check the console log: ${env.BUILD_URL}"
+        )
         echo '========================================'
         echo 'PIPELINE FAILED'
         echo 'Updating Jira'

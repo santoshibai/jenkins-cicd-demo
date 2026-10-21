@@ -4,9 +4,6 @@ GitHub commits and pull requests are tracked in Jira.
 This change is linked to Jira issue SCRUM-10 for GitHub and Slack activity tracking.
 Slack notification test completed for SCRUM-10
 
-\## SCRUM-11: GitHub and Jira Integration Verification
-
-
-
+\## SCRUM-11: GitHub and Jira Integration Verification from main
 This change verifies that commits pushed to the main branch can be associated with Jira issue SCRUM-11.
 

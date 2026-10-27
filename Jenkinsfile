@@ -154,14 +154,17 @@ pipeline {
         }
     }
     
-    post {
-
+    
+post {
     success {
-                slackSend(
-            channel: '#foodfusion',
+        slackSend(
+            channel: 'C0BUJDDTNBF',
             color: 'good',
-            message: "SUCCESS: ${env.JOB_NAME} #${env.BUILD_NUMBER} completed successfully.       ${env.BUILD_URL}"
+            message: "SUCCESS: ${env.JOB_NAME} - Build #${env.BUILD_NUMBER} completed successfully. ${env.BUILD_URL}",
+            botUser: true,
+            tokenCredentialId: 'slack-bot-token-new'
         )
+    }
         echo '========================================'
         echo 'PIPELINE COMPLETED SUCCESSFULLY'
         echo 'Updating Jira'
@@ -187,13 +190,18 @@ pipeline {
 
         echo 'Jira updated successfully'
     }
-
+    
     failure {
-                slackSend(
-            channel: '#foodfusion',
+        slackSend(
+            channel: 'C0BUJDDTNBF',
             color: 'danger',
-            message: "FAILED: ${env.JOB_NAME} #${env.BUILD_NUMBER} failed. Check the console log: ${env.BUILD_URL}"
+            message: "FAILURE: ${env.JOB_NAME} - Build #${env.BUILD_NUMBER} failed. Check logs: ${env.BUILD_URL}",
+            botUser: true,
+            tokenCredentialId: 'slack-bot-token-new'
         )
+    }
+}
+   
         echo '========================================'
         echo 'PIPELINE FAILED'
         echo 'Updating Jira'
